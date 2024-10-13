@@ -4,6 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Network Log Monitor</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
       body {
         font-family: Arial, sans-serif;
@@ -19,40 +20,98 @@
         border-radius: 5px;
         box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
       }
-      h1 {
-        text-align: center;
-        color: #333;
-      }
-      #log {
-        white-space: pre-wrap;
-        background-color: #eee;
-        padding: 20px;
-        border-radius: 5px;
-        height: 300px;
-        overflow-y: scroll;
+      canvas {
+        width: 100%;
+        height: 400px;
       }
     </style>
   </head>
   <body>
     <div class="container">
-      <h1>Network Log Monitor</h1>
-      <div id="log">Loading logs...</div>
+      <h2>Network Log Monitor</h2>
+      <canvas id="logChart"></canvas>
     </div>
 
     <script>
+      const ctx = document.getElementById("logChart").getContext("2d");
+      let chart;
+
+      function updateChart(data) {
+        const labels = data.map((log) => log.timestamp);
+        const packetLossData = data.map((log) => log.packet_loss);
+        const avgPingData = data.map((log) => log.avg_ping);
+        const maxPingData = data.map((log) => log.max_ping);
+
+        if (chart) {
+          // Update existing chart data
+          chart.data.labels = labels;
+          chart.data.datasets[0].data = packetLossData;
+          chart.data.datasets[1].data = avgPingData;
+          chart.data.datasets[2].data = maxPingData;
+          chart.update();
+        } else {
+          // Create new chart
+          chart = new Chart(ctx, {
+            type: "line",
+            data: {
+              labels: labels,
+              datasets: [
+                {
+                  label: "Packet Loss (%)",
+                  data: packetLossData,
+                  borderColor: "rgba(255, 99, 132, 1)",
+                  backgroundColor: "rgba(255, 99, 132, 0.2)",
+                  fill: false,
+                },
+                {
+                  label: "Avg Ping (ms)",
+                  data: avgPingData,
+                  borderColor: "rgba(54, 162, 235, 1)",
+                  backgroundColor: "rgba(54, 162, 235, 0.2)",
+                  fill: false,
+                },
+                {
+                  label: "Max Ping (ms)",
+                  data: maxPingData,
+                  borderColor: "rgba(75, 192, 192, 1)",
+                  backgroundColor: "rgba(75, 192, 192, 0.2)",
+                  fill: false,
+                },
+              ],
+            },
+            options: {
+              responsive: true,
+              scales: {
+                x: {
+                  title: {
+                    display: true,
+                    text: "Timestamp",
+                  },
+                },
+                y: {
+                  title: {
+                    display: true,
+                    text: "Ping",
+                  },
+                },
+              },
+            },
+          });
+        }
+      }
+
       function fetchLogs() {
         fetch("/logs")
           .then((response) => response.json())
           .then((data) => {
-            document.getElementById("log").innerText = data.join("");
-          });
+            updateChart(data);
+          })
+          .catch((error) => console.error("Error fetching logs:", error));
       }
 
-      // Fetch logs every 3 seconds
-      setInterval(fetchLogs, 3000);
-
-      // Fetch logs on page load
+      // Fetch logs initially and then every 3 seconds
       fetchLogs();
+      setInterval(fetchLogs, 3000);
     </script>
   </body>
 </html>
