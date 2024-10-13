@@ -39,8 +39,8 @@ def index():
 
 @app.route('/logs')
 def get_logs():
-    logs = parse_logs()[-10:]  # Return the last 10 logs
+    logs = parse_logs()[-100:]  # Return the last 10 logs
     return jsonify(logs)
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(host="0.0.0.0", debug=True)
