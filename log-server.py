@@ -1,5 +1,6 @@
 from flask import Flask, render_template, jsonify, request
 from datetime import datetime, timedelta
+from collections import defaultdict
 
 app = Flask(__name__)
 
@@ -34,6 +35,48 @@ def parse_logs():
                 continue
     return logs
 
+# Function to parse the log data for 24 hours format
+def parse_24_hours_logs(logs):
+    hourly_data = defaultdict(lambda: {
+        'packet_loss': 0,
+        'min_ping': float('inf'),
+        'avg_ping': 0,
+        'max_ping': float('-inf'),
+        'count': 0
+    })
+
+    for log in logs:
+        timestamp = log['timestamp']
+        packet_loss = log['packet_loss']
+        min_ping = log['min_ping']
+        avg_ping = log['avg_ping']
+        max_ping = log['max_ping']
+
+        # Get the hour key (timestamp without minutes and seconds)
+        hour_key = datetime.strptime(timestamp, '%Y-%m-%d %H:%M:%S').replace(minute=0, second=0, microsecond=0)
+
+        # Aggregate the data
+        hourly_data[hour_key]['packet_loss'] += packet_loss
+        hourly_data[hour_key]['min_ping'] = min(hourly_data[hour_key]['min_ping'], min_ping)
+        hourly_data[hour_key]['avg_ping'] += avg_ping  # Sum for averaging later
+        hourly_data[hour_key]['max_ping'] = max(hourly_data[hour_key]['max_ping'], max_ping)
+        hourly_data[hour_key]['count'] += 1
+
+    # Prepare the final averaged log data
+    parsed_logs = []
+    for hour_key, values in hourly_data.items():
+        if values['count'] > 0:
+            parsed_logs.append({
+                'timestamp': hour_key.strftime('%Y-%m-%d %H:%M:%S'),
+                'packet_loss': values['packet_loss'] / values['count'],
+                'min_ping': values['min_ping'],
+                'avg_ping': values['avg_ping'] / values['count'],  # Calculate average
+                'max_ping': values['max_ping'],
+                'mdev_ping': None  # You can handle this as needed
+            })
+
+    return parsed_logs
+
 @app.route('/')
 def index():
     return render_template('index.html')
@@ -51,7 +94,8 @@ def get_logs():
     elif mode == 'daily':
         now = datetime.now()
         last_24_hours = [log for log in logs if datetime.strptime(log['timestamp'], '%Y-%m-%d %H:%M:%S') > now - timedelta(days=1)]
-        return jsonify(last_24_hours)
+        parsed_last_24_hours = parse_24_hours_logs(last_24_hours)
+        return jsonify(parsed_last_24_hours)
 
     # Weekly: Return logs from the last 7 days
     elif mode == 'weekly':
