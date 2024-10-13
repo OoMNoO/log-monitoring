@@ -37,7 +37,7 @@ def parse_logs():
 
 # Function to parse the log data for 24 hours format
 def parse_24_hours_logs(logs):
-    hourly_data = defaultdict(lambda: {
+    thirty_minute_data = defaultdict(lambda: {
         'packet_loss': 0,
         'min_ping': float('inf'),
         'avg_ping': 0,
@@ -52,22 +52,24 @@ def parse_24_hours_logs(logs):
         avg_ping = log['avg_ping']
         max_ping = log['max_ping']
 
-        # Get the hour key (timestamp without minutes and seconds)
-        hour_key = datetime.strptime(timestamp, '%Y-%m-%d %H:%M:%S').replace(minute=0, second=0, microsecond=0)
+        # Get the 30-minute interval key (rounding down to nearest 30 minutes)
+        dt = datetime.strptime(timestamp, '%Y-%m-%d %H:%M:%S')
+        minute = (dt.minute // 30) * 30  # Round down to the nearest 30 minutes
+        thirty_minute_key = dt.replace(minute=minute, second=0, microsecond=0)
 
         # Aggregate the data
-        hourly_data[hour_key]['packet_loss'] += packet_loss
-        hourly_data[hour_key]['min_ping'] = min(hourly_data[hour_key]['min_ping'], min_ping)
-        hourly_data[hour_key]['avg_ping'] += avg_ping  # Sum for averaging later
-        hourly_data[hour_key]['max_ping'] = max(hourly_data[hour_key]['max_ping'], max_ping)
-        hourly_data[hour_key]['count'] += 1
+        thirty_minute_data[thirty_minute_key]['packet_loss'] += packet_loss
+        thirty_minute_data[thirty_minute_key]['min_ping'] = min(thirty_minute_data[thirty_minute_key]['min_ping'], min_ping)
+        thirty_minute_data[thirty_minute_key]['avg_ping'] += avg_ping  # Sum for averaging later
+        thirty_minute_data[thirty_minute_key]['max_ping'] = max(thirty_minute_data[thirty_minute_key]['max_ping'], max_ping)
+        thirty_minute_data[thirty_minute_key]['count'] += 1
 
     # Prepare the final averaged log data
     parsed_logs = []
-    for hour_key, values in hourly_data.items():
+    for thirty_minute_key, values in thirty_minute_data.items():
         if values['count'] > 0:
             parsed_logs.append({
-                'timestamp': hour_key.strftime('%Y-%m-%d %H:%M:%S'),
+                'timestamp': thirty_minute_key.strftime('%Y-%m-%d %H:%M:%S'),
                 'packet_loss': values['packet_loss'] / values['count'],
                 'min_ping': values['min_ping'],
                 'avg_ping': values['avg_ping'] / values['count'],  # Calculate average
