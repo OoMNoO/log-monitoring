@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Network Log Monitor</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        background-color: #f4f4f9;
+        margin: 0;
+        padding: 0;
+      }
+      .container {
+        max-width: 900px;
+        margin: 50px auto;
+        padding: 20px;
+        background-color: #fff;
+        border-radius: 5px;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+      }
+      h1 {
+        text-align: center;
+        color: #333;
+      }
+      #log {
+        white-space: pre-wrap;
+        background-color: #eee;
+        padding: 20px;
+        border-radius: 5px;
+        height: 300px;
+        overflow-y: scroll;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <h1>Network Log Monitor</h1>
+      <div id="log">Loading logs...</div>
+    </div>
+
+    <script>
+      function fetchLogs() {
+        fetch("/logs")
+          .then((response) => response.json())
+          .then((data) => {
+            document.getElementById("log").innerText = data.join("");
+          });
+      }
+
+      // Fetch logs every 3 seconds
+      setInterval(fetchLogs, 3000);
+
+      // Fetch logs on page load
+      fetchLogs();
+    </script>
+  </body>
+</html>
