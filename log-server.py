@@ -1,7 +1,8 @@
-from flask import Flask, render_template, jsonify
-import os
+from flask import Flask, render_template, jsonify, request
+from datetime import datetime, timedelta
 
 app = Flask(__name__)
+
 LOG_FILE_PATH = './NetworkMon.log'
 
 # Function to parse the log data and return structured data
@@ -39,8 +40,26 @@ def index():
 
 @app.route('/logs')
 def get_logs():
-    logs = parse_logs()[-100:]  # Return the last 10 logs
-    return jsonify(logs)
+    mode = request.args.get('mode', 'realtime')
+    logs = parse_logs()
+
+    # Real-time: Return the last 100 logs
+    if mode == 'realtime':
+        return jsonify(logs[-100:])
+
+    # Daily: Return logs from the last 24 hours
+    elif mode == 'daily':
+        now = datetime.now()
+        last_24_hours = [log for log in logs if datetime.strptime(log['timestamp'], '%Y-%m-%d %H:%M:%S') > now - timedelta(days=1)]
+        return jsonify(last_24_hours)
+
+    # Weekly: Return logs from the last 7 days
+    elif mode == 'weekly':
+        now = datetime.now()
+        last_7_days = [log for log in logs if datetime.strptime(log['timestamp'], '%Y-%m-%d %H:%M:%S') > now - timedelta(days=7)]
+        return jsonify(last_7_days)
+
+    return jsonify([])
 
 if __name__ == '__main__':
     app.run(host="0.0.0.0", debug=True)

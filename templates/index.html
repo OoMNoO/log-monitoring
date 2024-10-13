@@ -25,7 +25,8 @@
         width: 100%;
         height: 400px;
       }
-      #resetButton {
+      #resetButton,
+      #modeSelect {
         margin-top: 20px;
         padding: 10px 20px;
         background-color: #007bff;
@@ -34,7 +35,8 @@
         border-radius: 5px;
         cursor: pointer;
       }
-      #resetButton:hover {
+      #resetButton:hover,
+      #modeSelect:hover {
         background-color: #0056b3;
       }
     </style>
@@ -42,6 +44,14 @@
   <body>
     <div class="container">
       <h2>Network Log Monitor</h2>
+
+      <!-- Dropdown to select mode -->
+      <select id="modeSelect">
+        <option value="realtime">Real-Time</option>
+        <option value="daily">Last 24 Hours</option>
+        <option value="weekly">Last 7 Days</option>
+      </select>
+
       <canvas id="logChart"></canvas>
       <button id="resetButton">Reset Zoom</button>
     </div>
@@ -49,7 +59,9 @@
     <script>
       const ctx = document.getElementById("logChart").getContext("2d");
       let chart;
+      let mode = "realtime";
 
+      // Function to update chart with fetched data
       function updateChart(data) {
         const labels = data.map((log) => log.timestamp);
         const packetLossData = data.map((log) => log.packet_loss);
@@ -122,16 +134,22 @@
                 zoom: {
                   pan: {
                     enabled: true,
-                    mode: "x", // Allow panning along the x-axis only
+                    mode: "x",
                   },
                   zoom: {
                     wheel: {
-                      enabled: true, // Enable zooming via mouse wheel
+                      enabled: true,
+                    },
+                    drag: {
+                      enabled: true,
+                      backgroundColor: "#b9c5df",
+                      borderColor: "#7C93C3",
+                      borderWidth: 2,
                     },
                     pinch: {
-                      enabled: true, // Enable zooming via pinch gestures
+                      enabled: true,
                     },
-                    mode: "x", // Zoom along the x-axis only
+                    mode: "x",
                   },
                 },
               },
@@ -140,24 +158,36 @@
         }
       }
 
+      // Function to fetch logs based on the selected mode
       function fetchLogs() {
-        fetch("/logs")
+        let url = `/logs?mode=${mode}`;
+        fetch(url)
           .then((response) => response.json())
           .then((data) => {
             updateChart(data);
+            if (mode === "realtime") {
+              setTimeout(fetchLogs, 3000); // Keep updating every 3 seconds for real-time mode
+            }
           })
           .catch((error) => console.error("Error fetching logs:", error));
       }
 
-      // Fetch logs initially and then every 3 seconds
-      fetchLogs();
-      setInterval(fetchLogs, 3000);
+      // Event listener for mode selection change
+      document
+        .getElementById("modeSelect")
+        .addEventListener("change", function () {
+          mode = this.value;
+          fetchLogs(); // Fetch logs based on the new mode
+        });
 
-      // Add event listener to the Reset Zoom button
+      // Initial fetch and setup
+      fetchLogs();
+
+      // Reset zoom button event
       document
         .getElementById("resetButton")
         .addEventListener("click", function () {
-          chart.resetZoom(); // Reset the zoom level on the chart
+          chart.resetZoom();
         });
     </script>
   </body>
