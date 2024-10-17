@@ -14,30 +14,73 @@
         padding: 0;
       }
       .container {
-        max-width: 900px;
-        margin: 50px auto;
+        max-width: 90%;
+        margin: 20px auto;
         padding: 20px;
         background-color: #fff;
         border-radius: 5px;
         box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+      }
+      h2 {
+        text-align: center;
+        font-size: 1.8rem;
+        margin-bottom: 20px;
       }
       canvas {
         width: 100%;
-        height: 400px;
+        height: auto;
       }
       #resetButton,
       #modeSelect {
         margin-top: 20px;
-        padding: 10px 20px;
+        padding: 10px 15px;
         background-color: #007bff;
         color: white;
         border: none;
         border-radius: 5px;
         cursor: pointer;
+        font-size: 1rem;
+        display: inline-block;
       }
       #resetButton:hover,
       #modeSelect:hover {
         background-color: #0056b3;
+      }
+      #modeSelect {
+        margin-bottom: 10px;
+        font-size: 1rem;
+      }
+
+      /* Media queries for responsive design */
+      @media (max-width: 768px) {
+        .container {
+          padding: 15px;
+        }
+        h2 {
+          font-size: 1.6rem;
+        }
+        #resetButton,
+        #modeSelect {
+          width: 100%;
+          font-size: 1rem;
+        }
+      }
+
+      @media (max-width: 480px) {
+        h2 {
+          font-size: 1.4rem;
+        }
+        #resetButton,
+        #modeSelect {
+          padding: 8px 12px;
+          font-size: 0.9rem;
+        }
+        canvas {
+          height: 300px;
+        }
       }
     </style>
   </head>
@@ -63,7 +106,12 @@
 
       // Function to update chart with fetched data
       function updateChart(data) {
-        const labels = data.map((log) => log.timestamp);
+        let labels = null;
+        if (mode == "realtime" || mode == "daily") {
+          labels = data.map((log) => log.time);
+        } else {
+          labels = data.map((log) => log.timestamp);
+        }
         const packetLossData = data.map((log) => log.packet_loss);
         const avgPingData = data.map((log) => log.avg_ping);
         const maxPingData = data.map((log) => log.max_ping);
