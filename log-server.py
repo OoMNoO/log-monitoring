@@ -1,3 +1,6 @@
+import os
+import json
+import time
 from flask import Flask, render_template, jsonify, request
 from datetime import datetime, timedelta
 from collections import defaultdict
@@ -5,6 +8,8 @@ from collections import defaultdict
 app = Flask(__name__)
 
 LOG_FILE_PATH = './NetworkMon.log'
+CACHE_FILE_PATH = './cache.json'
+CACHE_TIMEOUT = 300  # Cache timeout in seconds (5 minutes)
 
 # Function to parse the log data and return structured data
 def parse_logs():
@@ -31,7 +36,8 @@ def parse_logs():
                         'max_ping': max_ping,
                         'mdev_ping': mdev_ping
                     })
-            except:
+            except Exception as e:
+                print(f"Error parsing log line: {e}")
                 continue
     return logs
 
@@ -122,6 +128,22 @@ def parse_weekly_logs(logs):
 
     return parsed_logs
 
+def load_cache():
+    """Load the cache from a file."""
+    if os.path.exists(CACHE_FILE_PATH):
+        with open(CACHE_FILE_PATH, 'r') as f:
+            return json.load(f)
+    return None
+
+def save_cache(data):
+    """Save the cache to a file."""
+    with open(CACHE_FILE_PATH, 'w') as f:
+        json.dump(data, f)
+
+def is_cache_valid(cache_time):
+    """Check if the cache is valid based on the timeout."""
+    return (datetime.now() - datetime.fromtimestamp(cache_time)).total_seconds() < CACHE_TIMEOUT
+
 @app.route('/')
 def index():
     return render_template('index.html')
@@ -131,22 +153,44 @@ def get_logs():
     mode = request.args.get('mode', 'realtime')
     logs = parse_logs()
 
+    # Load cached data
+    cache = load_cache()
+    now = datetime.now()
+
     # Real-time: Return the last 100 logs
     if mode == 'realtime':
         return jsonify(logs[-100:])
 
     # Daily: Return logs from the last 24 hours
     elif mode == 'daily':
-        now = datetime.now()
+        if cache and 'daily' in cache and is_cache_valid(cache['daily']['timestamp']):
+            return jsonify(cache['daily']['data'])
+        
         last_24_hours = [log for log in logs if datetime.strptime(log['timestamp'], '%Y-%m-%d %H:%M:%S') > now - timedelta(days=1)]
         parsed_last_24_hours = parse_24_hours_logs(last_24_hours)
+
+        # Update cache
+        if cache is None:
+            cache = {}
+        cache['daily'] = {'timestamp': now.timestamp(), 'data': parsed_last_24_hours}
+        save_cache(cache)
+
         return jsonify(parsed_last_24_hours)
 
     # Weekly: Return logs from the last 7 days
     elif mode == 'weekly':
-        now = datetime.now()
+        if cache and 'weekly' in cache and is_cache_valid(cache['weekly']['timestamp']):
+            return jsonify(cache['weekly']['data'])
+        
         last_7_days = [log for log in logs if datetime.strptime(log['timestamp'], '%Y-%m-%d %H:%M:%S') > now - timedelta(days=7)]
         parsed_last_7_days = parse_weekly_logs(last_7_days)
+
+        # Update cache
+        if cache is None:
+            cache = {}
+        cache['weekly'] = {'timestamp': now.timestamp(), 'data': parsed_last_7_days}
+        save_cache(cache)
+
         return jsonify(parsed_last_7_days)
 
     return jsonify([])
