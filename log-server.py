@@ -76,10 +76,14 @@ def parse_24_hours_logs(logs):
     parsed_logs = []
     for thirty_minute_key, values in thirty_minute_data.items():
         if values['count'] > 0:
+            timestamp = thirty_minute_key.strftime('%Y-%m-%d %H:%M:%S')
+            time = timestamp.split(" ")[1]
+            time_hour = time.split(":")[0]
+            time_minute = time.split(":")[1]
             parsed_logs.append({
-                'timestamp': thirty_minute_key.strftime('%Y-%m-%d %H:%M:%S'),
-                'date': thirty_minute_key.strftime('%Y-%m-%d %H:%M:%S').split(" ")[0],
-                'time': thirty_minute_key.strftime('%Y-%m-%d %H:%M:%S').split(" ")[1],
+                'timestamp': timestamp,
+                'date': timestamp.split(" ")[0],
+                'time': f"{time_hour}:{time_minute}",
                 'packet_loss': values['packet_loss'] / values['count'],
                 'min_ping': values['min_ping'],
                 'avg_ping': values['avg_ping'] / values['count'],  # Calculate average
