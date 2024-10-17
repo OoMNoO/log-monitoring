@@ -30,6 +30,8 @@ def parse_logs():
                     mdev_ping = int(status[4])
                     logs.append({
                         'timestamp': timestamp,
+                        'date': timestamp.split(" ")[0],
+                        'time': timestamp.split(" ")[1],
                         'packet_loss': packet_loss,
                         'min_ping': min_ping,
                         'avg_ping': avg_ping,
@@ -76,6 +78,8 @@ def parse_24_hours_logs(logs):
         if values['count'] > 0:
             parsed_logs.append({
                 'timestamp': thirty_minute_key.strftime('%Y-%m-%d %H:%M:%S'),
+                'date': thirty_minute_key.strftime('%Y-%m-%d %H:%M:%S').split(" ")[0],
+                'time': thirty_minute_key.strftime('%Y-%m-%d %H:%M:%S').split(" ")[1],
                 'packet_loss': values['packet_loss'] / values['count'],
                 'min_ping': values['min_ping'],
                 'avg_ping': values['avg_ping'] / values['count'],  # Calculate average
