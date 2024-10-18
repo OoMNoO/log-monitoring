@@ -1,16 +1,55 @@
 import os
+import subprocess
 import json
-import time
 from flask import Flask, render_template, jsonify, request
+import threading
 from datetime import datetime, timedelta
 from collections import defaultdict
 
 app = Flask(__name__)
 
+# Log server variables
 LOG_SERVER_PORT = "5000"
-LOG_FILE_PATH = './NetworkMon.log'
+LOG_FILE_PATH = '/mnt/D/Projects/log-chart/NetworkMon.log'
 CACHE_FILE_PATH = './cache.json'
 CACHE_TIMEOUT = 300  # Cache timeout in seconds (5 minutes)
+
+# Ping test variables
+TestSource= '8.8.8.8'
+interval= '0.3'
+count='10'
+
+
+def PingTest():
+    while(True):
+        CommandOutput, err=subprocess.Popen(["ping", TestSource, "-c", count, "-i", interval], stdout=subprocess.PIPE).communicate()
+
+        if 'ttl=' in str(CommandOutput):
+            for line in str(CommandOutput).split('\\n'):
+                # if line.find('received,') != -1:
+                #     PacketLoss= int(line[line.find('received,') + 10 : line.find('% packet loss')])
+                if line.find('received,') != -1:
+                    # Split the line into parts
+                    parts = line.split(',')
+                    # Extract the second part which contains the received count
+                    received_part = parts[1].strip()
+                    # Extract the number of received packets
+                    PacketLoss = int(received_part.split()[0])
+
+                elif line.find('mdev = ') != -1:
+                    NetworkData= line[line.find('mdev = ') + 7 : line.find(' ms')].split('/')
+
+                    MinPing=int(float(NetworkData[0]))
+                    AvgPing=int(float(NetworkData[1]))
+                    MaxPing=int(float(NetworkData[2]))
+                    MdevPing=int(float(NetworkData[3]))
+
+                    log=str(PacketLoss) + '_' + str(MinPing) + '_' + str(AvgPing) + '_' + str(MaxPing) + '_' + str(MdevPing)
+
+        else:
+            log= "TimeOut"
+
+        subprocess.Popen('echo ' + str(datetime.now()) + ' - ' + TestSource + ' Connection status : ' + log  + ' >> ' + LOG_FILE_PATH, shell= True, env= os.environ)
 
 # Function to parse the log data and return structured data
 def parse_logs():
@@ -205,4 +244,18 @@ def get_logs():
     return jsonify([])
 
 if __name__ == '__main__':
+    # Start the background task in a separate thread
+    thread = threading.Thread(target=PingTest)
+    thread.daemon = True  # This allows the thread to exit when the main program exits
+    thread.start()
+    
+    # Run the Flask server
     app.run(host="0.0.0.0", port=LOG_SERVER_PORT, debug=True)
+
+# TODO:
+# websocket for realtime
+# remove zoom, dynmic realtime display
+# modes: realtime, 1hr, 6hr, 12hr, 24hr
+# remove average
+# remove weekly
+# responsive
