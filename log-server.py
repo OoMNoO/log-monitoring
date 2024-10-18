@@ -7,6 +7,7 @@ from collections import defaultdict
 
 app = Flask(__name__)
 
+LOG_SERVER_PORT = "5000"
 LOG_FILE_PATH = './NetworkMon.log'
 CACHE_FILE_PATH = './cache.json'
 CACHE_TIMEOUT = 300  # Cache timeout in seconds (5 minutes)
@@ -204,4 +205,4 @@ def get_logs():
     return jsonify([])
 
 if __name__ == '__main__':
-    app.run(host="0.0.0.0", debug=True)
+    app.run(host="0.0.0.0", port=LOG_SERVER_PORT, debug=True)
