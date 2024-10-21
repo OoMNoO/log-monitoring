@@ -251,7 +251,7 @@ if __name__ == '__main__':
 
 # TODO:
 # websocket for realtime
-# remove zoom, dynmic realtime display
+# dynmic realtime display
 # modes: realtime, 1hr, 6hr, 12hr, 24hr
 # remove average
 # remove weekly

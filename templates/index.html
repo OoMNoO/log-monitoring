@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Network Log Monitor</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-zoom@1.2.1"></script>
     <style>
       body {
         font-family: Arial, sans-serif;
@@ -33,7 +32,6 @@
         width: 100%;
         height: auto;
       }
-      #resetButton,
       #modeSelect {
         margin-top: 20px;
         padding: 10px 15px;
@@ -45,7 +43,6 @@
         font-size: 1rem;
         display: inline-block;
       }
-      #resetButton:hover,
       #modeSelect:hover {
         background-color: #0056b3;
       }
@@ -62,7 +59,6 @@
         h2 {
           font-size: 1.6rem;
         }
-        #resetButton,
         #modeSelect {
           width: 100%;
           font-size: 1rem;
@@ -73,7 +69,6 @@
         h2 {
           font-size: 1.4rem;
         }
-        #resetButton,
         #modeSelect {
           padding: 8px 12px;
           font-size: 0.9rem;
@@ -96,7 +91,6 @@
       </select>
 
       <canvas id="logChart"></canvas>
-      <button id="resetButton">Reset Zoom</button>
     </div>
 
     <script>
@@ -178,29 +172,7 @@
                   },
                 },
               },
-              plugins: {
-                zoom: {
-                  pan: {
-                    enabled: true,
-                    mode: "x",
-                  },
-                  zoom: {
-                    wheel: {
-                      enabled: true,
-                    },
-                    drag: {
-                      enabled: true,
-                      backgroundColor: "#b9c5df",
-                      borderColor: "#7C93C3",
-                      borderWidth: 2,
-                    },
-                    pinch: {
-                      enabled: true,
-                    },
-                    mode: "x",
-                  },
-                },
-              },
+              plugins: {},
             },
           });
         }
@@ -230,13 +202,6 @@
 
       // Initial fetch and setup
       fetchLogs();
-
-      // Reset zoom button event
-      document
-        .getElementById("resetButton")
-        .addEventListener("click", function () {
-          chart.resetZoom();
-        });
     </script>
   </body>
 </html>
