@@ -118,7 +118,13 @@
           chart.data.datasets[1].data = avgPingData;
           chart.data.datasets[2].data = minPingData;
           chart.data.datasets[3].data = maxPingData;
-          chart.update();
+
+          // Prevent jumpy transitions by using 'none' for real-time updates
+          if (mode === "realtime") {
+            chart.update("none");
+          } else {
+            chart.update();
+          }
         } else {
           // Create new chart
           chart = new Chart(ctx, {
@@ -158,6 +164,10 @@
             },
             options: {
               responsive: true,
+              animation: {
+                duration: 400,
+                easing: "linear",
+              },
               scales: {
                 x: {
                   title: {
@@ -172,7 +182,6 @@
                   },
                 },
               },
-              plugins: {},
             },
           });
         }
