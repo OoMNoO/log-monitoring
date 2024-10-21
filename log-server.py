@@ -10,7 +10,7 @@ app = Flask(__name__)
 
 # Log server variables
 LOG_SERVER_PORT = "5000"
-LOG_FILE_PATH = '/mnt/D/Projects/log-chart/NetworkMon.log'
+LOG_FILE_PATH = '/mnt/D/Projects/log-monitoring/NetworkMon.log'
 CACHE_FILE_PATH = './cache.json'
 CACHE_TIMEOUT = 300  # Cache timeout in seconds (5 minutes)
 
