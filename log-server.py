@@ -14,44 +14,35 @@ LOG_FILE_PATH = '/mnt/D/Projects/log-chart/NetworkMon.log'
 CACHE_FILE_PATH = './cache.json'
 CACHE_TIMEOUT = 300  # Cache timeout in seconds (5 minutes)
 
-# Ping test variables
-ThreadTimerInterval = 3.0
-interval= '0.3'
-count='10'
-TestSource= '8.8.8.8'
+# # Ping test variables
+# ThreadTimerInterval = 3.0
+# interval= '0.3'
+# count='10'
+# TestSource= '8.8.8.8'
 
+# def PingTest():
+#     PingTest_timer = threading.Timer(ThreadTimerInterval, PingTest)
+#     PingTest_timer.daemon = True
+#     PingTest_timer.start()
+#     CommandOutput, err=subprocess.Popen(["ping", TestSource, "-c", count, "-i", interval], stdout=subprocess.PIPE).communicate()
+#     if 'ttl=' in str(CommandOutput):
+#         for line in str(CommandOutput).split('\\n'):
+#             if line.find('received,') != -1:
+#                 PacketLoss= int(line[line.find('received,') + 10 : line.find('% packet loss')])
+#             elif line.find('mdev = ') != -1:
+#                 NetworkData= line[line.find('mdev = ') + 7 : line.find(' ms')].split('/')
+#                 MinPing=int(float(NetworkData[0]))
+#                 AvgPing=int(float(NetworkData[1]))
+#                 MaxPing=int(float(NetworkData[2]))
+#                 MdevPing=int(float(NetworkData[3]))
+#                 log=str(PacketLoss) + '_' + str(MinPing) + '_' + str(AvgPing) + '_' + str(MaxPing) + '_' + str(MdevPing)
+#     else:
+#         log= "TimeOut"
+#        
+#     subprocess.Popen('echo ' + str(datetime.now()) + ' - ' + TestSource + ' Connection status : ' + log  + ' >> ' + LOG_FILE_PATH, shell= True, env= os.environ)
+#     return
 
-def PingTest():
-    PingTest_timer = threading.Timer(ThreadTimerInterval, PingTest)
-    PingTest_timer.daemon = True
-    PingTest_timer.start()
-    CommandOutput, err=subprocess.Popen(["ping", TestSource, "-c", count, "-i", interval], stdout=subprocess.PIPE).communicate()
-    if 'ttl=' in str(CommandOutput):
-        for line in str(CommandOutput).split('\\n'):
-            # if line.find('received,') != -1:
-            #     PacketLoss= int(line[line.find('received,') + 10 : line.find('% packet loss')])
-            if line.find('received,') != -1:
-                # Split the line into parts
-                parts = line.split(',')
-                # Extract the second part which contains the received count
-                received_part = parts[1].strip()
-                # Extract the number of received packets
-                PacketLoss = int(received_part.split()[0])
-            elif line.find('mdev = ') != -1:
-                NetworkData= line[line.find('mdev = ') + 7 : line.find(' ms')].split('/')
-                MinPing=int(float(NetworkData[0]))
-                AvgPing=int(float(NetworkData[1]))
-                MaxPing=int(float(NetworkData[2]))
-                MdevPing=int(float(NetworkData[3]))
-                log=str(PacketLoss) + '_' + str(MinPing) + '_' + str(AvgPing) + '_' + str(MaxPing) + '_' + str(MdevPing)
-    else:
-        # log= "TimeOut"
-        log = "0_0_0_0_0"
-        
-    subprocess.Popen('echo ' + str(datetime.now()) + ' - ' + TestSource + ' Connection status : ' + log  + ' >> ' + LOG_FILE_PATH, shell= True, env= os.environ)
-    return
-
-PingTest()
+# PingTest()
 
 # Function to parse the log data and return structured data
 def parse_logs():
