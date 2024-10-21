@@ -15,16 +15,9 @@ def main():
 
         if 'ttl=' in str(CommandOutput):
             for line in str(CommandOutput).split('\\n'):
-                # if line.find('received,') != -1:
-                #     PacketLoss= int(line[line.find('received,') + 10 : line.find('% packet loss')])
                 if line.find('received,') != -1:
-                    # Split the line into parts
-                    parts = line.split(',')
-                    # Extract the second part which contains the received count
-                    received_part = parts[1].strip()
-                    # Extract the number of received packets
-                    PacketLoss = int(received_part.split()[0])
-
+                    PacketLoss= int(line[line.find('received,') + 10 : line.find('% packet loss')])
+                
                 elif line.find('mdev = ') != -1:
                     NetworkData= line[line.find('mdev = ') + 7 : line.find(' ms')].split('/')
 
