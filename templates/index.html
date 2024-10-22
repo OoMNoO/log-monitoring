@@ -86,8 +86,11 @@
       <!-- Dropdown to select mode -->
       <select id="modeSelect">
         <option value="realtime">Real-Time</option>
-        <option value="daily">Last 24 Hours</option>
-        <option value="weekly">Last 7 Days</option>
+        <option value="1hr">Last 1 Hour</option>
+        <option value="3hr">Last 3 Hours</option>
+        <option value="12hr">Last 12 Hours</option>
+        <option value="24hr">Last 24 Hours</option>
+        <option value="72hr">Last 72 Hours</option>
       </select>
 
       <canvas id="logChart"></canvas>
@@ -97,11 +100,12 @@
       const ctx = document.getElementById("logChart").getContext("2d");
       let chart;
       let mode = "realtime";
+      const modes = ["realtime", "1hr", "3hr", "12hr", "24hr"];
 
       // Function to update chart with fetched data
       function updateChart(data) {
         let labels = null;
-        if (mode == "realtime" || mode == "daily") {
+        if (modes.includes(mode)) {
           labels = data.map((log) => log.time);
         } else {
           labels = data.map((log) => log.timestamp);
