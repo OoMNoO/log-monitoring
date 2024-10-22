@@ -11,7 +11,7 @@ app = Flask(__name__)
 # Log server variables
 LOG_SERVER_PORT = "5000"
 LOG_FILE_PATH = '/mnt/D/Projects/log-monitoring/NetworkMon.log'
-CACHE_FILE_PATH = './cache.json'
+CACHE_FILE_PATH = './cache'
 CACHE_TIMEOUT = 300  # Cache timeout in seconds (5 minutes)
 
 # # Ping test variables
@@ -83,16 +83,16 @@ def parse_logs():
                 continue
     return logs
 
-def load_cache():
+def load_cache(mode):
     """Load the cache from a file."""
-    if os.path.exists(CACHE_FILE_PATH):
-        with open(CACHE_FILE_PATH, 'r') as f:
+    if os.path.exists(f"{CACHE_FILE_PATH}_{mode}.json"):
+        with open(f"{CACHE_FILE_PATH}_{mode}.json", 'r') as f:
             return json.load(f)
     return None
 
-def save_cache(data):
+def save_cache(mode, data):
     """Save the cache to a file."""
-    with open(CACHE_FILE_PATH, 'w') as f:
+    with open(f"{CACHE_FILE_PATH}_{mode}.json", 'w') as f:
         json.dump(data, f)
 
 def is_cache_valid(cache_time):
@@ -108,10 +108,6 @@ def get_logs():
     mode = request.args.get('mode', 'realtime')
     logs = parse_logs()
 
-    # Load cached data
-    cache = load_cache()
-    now = datetime.now()
-
     # Real-time: Return the last 100 logs
     if mode == 'realtime':
         return jsonify(logs[-100:])
@@ -125,20 +121,24 @@ def get_logs():
     }
 
     if mode in interval_map:
+
+        # Load cached data
+        cache = load_cache(mode)
+        now = datetime.now()
         
         interval_hours = interval_map[mode]
         
-        if cache and mode in cache and is_cache_valid(cache[mode]['timestamp']):
+        if cache and is_cache_valid(cache['timestamp']):
             print(f"{mode} found in cache")
-            return jsonify(cache[mode]['data'])
+            return jsonify(cache['data'])
         print(f"{mode} not found in cache")
         relevant_logs = [log for log in logs if datetime.strptime(log['timestamp'], '%Y-%m-%d %H:%M:%S') > now - timedelta(hours=interval_hours)]
         
         # Update cache
         if cache is None:
             cache = {}
-        cache[mode] = {'timestamp': now.timestamp(), 'data': relevant_logs}
-        save_cache(cache)
+        cache = {'timestamp': now.timestamp(), 'data': relevant_logs}
+        save_cache(mode, cache)
         
         return jsonify(relevant_logs)
 
