@@ -134,20 +134,13 @@ def update_cache():
     UpdateCache_timer.daemon = True
     UpdateCache_timer.start()
     
-    update_cache2()
-    
-    return
-
-
-def update_cache2():
-    
     logs = parse_logs()  # Parse logs from the log file
 
     now = datetime.now()
 
     # Update cache for each mode
     for mode, interval_hours in interval_map.items():
-        print(f"Updating cache for mode: {mode}")
+        print(f"-------------------------\nUpdating {mode} mode cache\n-------------------------")
         relevant_logs = [log for log in logs if datetime.strptime(log['timestamp'], '%Y-%m-%d %H:%M:%S') > now - timedelta(hours=interval_hours)]
         save_cache(mode, {'timestamp': now.timestamp(), 'data': relevant_logs})
     return
@@ -191,7 +184,8 @@ if __name__ == '__main__':
 
     # Start the Flask server as Production
     app.run(host="0.0.0.0", port=LOG_SERVER_PORT)
-    # app.run(host="0.0.0.0", port=LOG_SERVER_PORT, debug=True)
+    
+    # # Start the Flask server as Development with no reloader to prevent file write issues
     # app.run(host="0.0.0.0", port=LOG_SERVER_PORT, debug=True, use_reloader=False)
 
 # TODO:
