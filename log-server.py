@@ -187,7 +187,3 @@ if __name__ == '__main__':
     
     # # Start the Flask server as Development with no reloader to prevent file write issues
     # app.run(host="0.0.0.0", port=LOG_SERVER_PORT, debug=True, use_reloader=False)
-
-# TODO:
-# - Add websocket for real-time log updates.
-# - Make the UI responsive.
