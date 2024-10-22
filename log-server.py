@@ -181,9 +181,6 @@ if __name__ == '__main__':
     
     # Start the background cache updater
     update_cache()
-
-    # Start the Flask server as Production
-    app.run(host="0.0.0.0", port=LOG_SERVER_PORT)
     
-    # # Start the Flask server as Development with no reloader to prevent file write issues
-    # app.run(host="0.0.0.0", port=LOG_SERVER_PORT, debug=True, use_reloader=False)
+    # Start the Flask server as Development with no reloader to prevent file write issues
+    app.run(host="0.0.0.0", port=LOG_SERVER_PORT, debug=True, use_reloader=False)
