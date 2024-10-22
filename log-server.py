@@ -56,11 +56,18 @@ def parse_logs():
                 if len(parts) > 1:
                     timestamp = parts[0].rsplit('-', 1)[0].strip().rsplit('.', 1)[0].strip()
                     status = parts[1].strip().split('_')
-                    packet_loss = int(status[0])
-                    min_ping = int(status[1])
-                    avg_ping = int(status[2])
-                    max_ping = int(status[3])
-                    mdev_ping = int(status[4])
+                    if status[0] == "TimeOut":
+                        packet_loss = 100
+                        min_ping = 0
+                        avg_ping = 0
+                        max_ping = 0
+                        mdev_ping = 0
+                    else:
+                        packet_loss = int(status[0])
+                        min_ping = int(status[1])
+                        avg_ping = int(status[2])
+                        max_ping = int(status[3])
+                        mdev_ping = int(status[4])
                     logs.append({
                         'timestamp': timestamp,
                         'date': timestamp.split(" ")[0],
