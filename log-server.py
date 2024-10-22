@@ -4,7 +4,6 @@ import json
 from flask import Flask, render_template, jsonify, request
 import threading
 from datetime import datetime, timedelta
-from collections import defaultdict
 
 app = Flask(__name__)
 
@@ -14,35 +13,42 @@ LOG_FILE_PATH = '/mnt/D/Projects/log-monitoring/NetworkMon.log'  # Path to the l
 CACHE_FILE_PATH = './cache'  # Path to store cached data
 CACHE_TIMEOUT = 300  # Cache timeout in seconds (5 minutes)
 
-# # Ping test variables
-# ThreadTimerInterval = 3.0
-# interval= '0.3'
-# count='10'
-# TestSource= '8.8.8.8'
+# Define the hour intervals for different modes
+interval_map = {
+    '1hr': 1,
+    '3hr': 3,
+    '12hr': 12,
+    '24hr': 24,
+    '72hr': 72
+}
 
-# def PingTest():
-#     PingTest_timer = threading.Timer(ThreadTimerInterval, PingTest)
-#     PingTest_timer.daemon = True
-#     PingTest_timer.start()
-#     CommandOutput, err=subprocess.Popen(["ping", TestSource, "-c", count, "-i", interval], stdout=subprocess.PIPE).communicate()
-#     if 'ttl=' in str(CommandOutput):
-#         for line in str(CommandOutput).split('\\n'):
-#             if line.find('received,') != -1:
-#                 PacketLoss= int(line[line.find('received,') + 10 : line.find('% packet loss')])
-#             elif line.find('mdev = ') != -1:
-#                 NetworkData= line[line.find('mdev = ') + 7 : line.find(' ms')].split('/')
-#                 MinPing=int(float(NetworkData[0]))
-#                 AvgPing=int(float(NetworkData[1]))
-#                 MaxPing=int(float(NetworkData[2]))
-#                 MdevPing=int(float(NetworkData[3]))
-#                 log=str(PacketLoss) + '_' + str(MinPing) + '_' + str(AvgPing) + '_' + str(MaxPing) + '_' + str(MdevPing)
-#     else:
-#         log= "TimeOut"
-#        
-#     subprocess.Popen('echo ' + str(datetime.now()) + ' - ' + TestSource + ' Connection status : ' + log  + ' >> ' + LOG_FILE_PATH, shell= True, env= os.environ)
-#     return
+# Ping test variables
+ThreadTimerInterval = 3.0
+interval= '0.3'
+count='10'
+TestSource= '8.8.8.8'
 
-# PingTest()
+def PingTest():
+    PingTest_timer = threading.Timer(ThreadTimerInterval, PingTest)
+    PingTest_timer.daemon = True
+    PingTest_timer.start()
+    CommandOutput, err=subprocess.Popen(["ping", TestSource, "-c", count, "-i", interval], stdout=subprocess.PIPE).communicate()
+    if 'ttl=' in str(CommandOutput):
+        for line in str(CommandOutput).split('\\n'):
+            if line.find('received,') != -1:
+                PacketLoss= int(line[line.find('received,') + 10 : line.find('% packet loss')])
+            elif line.find('mdev = ') != -1:
+                NetworkData= line[line.find('mdev = ') + 7 : line.find(' ms')].split('/')
+                MinPing=int(float(NetworkData[0]))
+                AvgPing=int(float(NetworkData[1]))
+                MaxPing=int(float(NetworkData[2]))
+                MdevPing=int(float(NetworkData[3]))
+                log=str(PacketLoss) + '_' + str(MinPing) + '_' + str(AvgPing) + '_' + str(MaxPing) + '_' + str(MdevPing)
+    else:
+        log= "TimeOut"
+       
+    subprocess.Popen('echo ' + str(datetime.now()) + ' - ' + TestSource + ' Connection status : ' + log  + ' >> ' + LOG_FILE_PATH, shell= True, env= os.environ)
+    return
 
 # Function to parse the log data from the log file
 def parse_logs():
@@ -115,6 +121,37 @@ def is_cache_valid(cache_time):
     """
     return (datetime.now() - datetime.fromtimestamp(cache_time)).total_seconds() < CACHE_TIMEOUT
 
+def update_cache():
+    """
+    Updates the cache for all defined modes in the background.
+    This function runs at intervals defined by CACHE_TIMEOUT.
+    """
+    
+    print("Updating cache for all modes...\nit can take some time, please wait")
+    
+    # Schedule the next cache update
+    UpdateCache_timer = threading.Timer(CACHE_TIMEOUT, update_cache)
+    UpdateCache_timer.daemon = True
+    UpdateCache_timer.start()
+    
+    update_cache2()
+    
+    return
+
+
+def update_cache2():
+    
+    logs = parse_logs()  # Parse logs from the log file
+
+    now = datetime.now()
+
+    # Update cache for each mode
+    for mode, interval_hours in interval_map.items():
+        print(f"Updating cache for mode: {mode}")
+        relevant_logs = [log for log in logs if datetime.strptime(log['timestamp'], '%Y-%m-%d %H:%M:%S') > now - timedelta(hours=interval_hours)]
+        save_cache(mode, {'timestamp': now.timestamp(), 'data': relevant_logs})
+    return
+
 @app.route('/')
 def index():
     """
@@ -137,45 +174,25 @@ def get_logs():
     if mode == 'realtime':
         return jsonify(logs[-100:])
 
-    # Define the hour intervals for different modes
-    interval_map = {
-        '1hr': 1,
-        '3hr': 3,
-        '12hr': 12,
-        '24hr': 24,
-        '72hr': 72
-    }
-
     # Handle historical modes (1hr, 3hr, 12hr, 24hr, 72hr)
     if mode in interval_map:
         cache = load_cache(mode)  # Load cached data for the mode
-        now = datetime.now()
-        interval_hours = interval_map[mode]  # Get the number of hours for the mode
-
-        # If cache is valid, return cached data
-        if cache and is_cache_valid(cache['timestamp']):
-            print(f"{mode} found in cache")
-            return jsonify(cache['data'])
-        
-        print(f"{mode} not found in cache")
-        
-        # Filter logs based on the time interval
-        relevant_logs = [log for log in logs if datetime.strptime(log['timestamp'], '%Y-%m-%d %H:%M:%S') > now - timedelta(hours=interval_hours)]
-        
-        # Save the filtered logs to the cache
-        if cache is None:
-            cache = {}
-        cache = {'timestamp': now.timestamp(), 'data': relevant_logs}
-        save_cache(mode, cache)
-        
-        return jsonify(relevant_logs)  # Return the filtered logs
+        return jsonify(cache['data'])
 
     # If mode is not recognized, return an empty list
     return jsonify([])
 
 if __name__ == '__main__':
-    # Start the Flask server
-    app.run(host="0.0.0.0", port=LOG_SERVER_PORT, debug=True)
+    # Start the background PingTest service
+    PingTest()
+    
+    # Start the background cache updater
+    update_cache()
+
+    # Start the Flask server as Production
+    app.run(host="0.0.0.0", port=LOG_SERVER_PORT)
+    # app.run(host="0.0.0.0", port=LOG_SERVER_PORT, debug=True)
+    # app.run(host="0.0.0.0", port=LOG_SERVER_PORT, debug=True, use_reloader=False)
 
 # TODO:
 # - Add websocket for real-time log updates.
