@@ -22,34 +22,6 @@ interval_map = {
     '72hr': 72
 }
 
-# Ping test variables
-ThreadTimerInterval = 3.0
-interval= '0.3'
-count='10'
-TestSource= '8.8.8.8'
-
-def PingTest():
-    PingTest_timer = threading.Timer(ThreadTimerInterval, PingTest)
-    PingTest_timer.daemon = True
-    PingTest_timer.start()
-    CommandOutput, err=subprocess.Popen(["ping", TestSource, "-c", count, "-i", interval], stdout=subprocess.PIPE).communicate()
-    if 'ttl=' in str(CommandOutput):
-        for line in str(CommandOutput).split('\\n'):
-            if line.find('received,') != -1:
-                PacketLoss= int(line[line.find('received,') + 10 : line.find('% packet loss')])
-            elif line.find('mdev = ') != -1:
-                NetworkData= line[line.find('mdev = ') + 7 : line.find(' ms')].split('/')
-                MinPing=int(float(NetworkData[0]))
-                AvgPing=int(float(NetworkData[1]))
-                MaxPing=int(float(NetworkData[2]))
-                MdevPing=int(float(NetworkData[3]))
-                log=str(PacketLoss) + '_' + str(MinPing) + '_' + str(AvgPing) + '_' + str(MaxPing) + '_' + str(MdevPing)
-    else:
-        log= "TimeOut"
-       
-    subprocess.Popen('echo ' + str(datetime.now()) + ' - ' + TestSource + ' Connection status : ' + log  + ' >> ' + LOG_FILE_PATH, shell= True, env= os.environ)
-    return
-
 # Function to parse the log data from the log file
 def parse_logs():
     """
@@ -176,8 +148,6 @@ def get_logs():
     return jsonify([])
 
 if __name__ == '__main__':
-    # Start the background PingTest service
-    PingTest()
     
     # Start the background cache updater
     update_cache()
