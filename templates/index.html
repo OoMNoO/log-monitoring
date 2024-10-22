@@ -4,7 +4,11 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Network Log Monitor</title>
+
+    <!-- Load Chart.js for rendering charts -->
     <script src="/static/vendors/chart.js"></script>
+
+    <!-- Styling for the page layout and responsiveness -->
     <style>
       body {
         font-family: Arial, sans-serif;
@@ -12,6 +16,8 @@
         margin: 0;
         padding: 0;
       }
+
+      /* Main container styles for the content */
       .container {
         max-width: 90%;
         margin: 20px auto;
@@ -23,15 +29,20 @@
         flex-direction: column;
         align-items: center;
       }
+
       h2 {
         text-align: center;
         font-size: 1.8rem;
         margin-bottom: 20px;
       }
+
+      /* Ensure canvas (chart area) takes full width but maintains aspect ratio */
       canvas {
         width: 100%;
         height: auto;
       }
+
+      /* Styles for mode dropdown button */
       #modeSelect {
         margin-top: 20px;
         padding: 10px 15px;
@@ -43,15 +54,18 @@
         font-size: 1rem;
         display: inline-block;
       }
+
+      /* Hover effect for mode dropdown button */
       #modeSelect:hover {
         background-color: #0056b3;
       }
+
       #modeSelect {
         margin-bottom: 10px;
         font-size: 1rem;
       }
 
-      /* Media queries for responsive design */
+      /* Media queries for responsiveness on smaller devices */
       @media (max-width: 768px) {
         .container {
           padding: 15px;
@@ -79,11 +93,13 @@
       }
     </style>
   </head>
+
   <body>
+    <!-- Main content container -->
     <div class="container">
       <h2>Network Log Monitor</h2>
 
-      <!-- Dropdown to select mode -->
+      <!-- Dropdown for selecting the log mode (realtime, 1hr, etc.) -->
       <select id="modeSelect">
         <option value="realtime">Real-Time</option>
         <option value="1hr">Last 1 Hour</option>
@@ -93,44 +109,50 @@
         <option value="72hr">Last 72 Hours</option>
       </select>
 
+      <!-- Canvas element where the chart will be drawn -->
       <canvas id="logChart"></canvas>
     </div>
 
+    <!-- JavaScript to handle chart creation and log fetching -->
     <script>
       const ctx = document.getElementById("logChart").getContext("2d");
-      let chart;
-      let mode = "realtime";
-      const modes = ["realtime", "1hr", "3hr", "12hr", "24hr"];
+      let chart; // Holds the chart instance
+      let mode = "realtime"; // Default mode
+      const modes = ["realtime", "1hr", "3hr", "12hr", "24hr"]; // Supported modes
 
-      // Function to update chart with fetched data
+      // Function to update the chart with fetched log data
       function updateChart(data) {
         let labels = null;
+
+        // Use time for 'realtime' mode and timestamp for other modes
         if (modes.includes(mode)) {
           labels = data.map((log) => log.time);
         } else {
           labels = data.map((log) => log.timestamp);
         }
+
+        // Extract different ping and packet loss values from logs
         const packetLossData = data.map((log) => log.packet_loss);
         const avgPingData = data.map((log) => log.avg_ping);
         const maxPingData = data.map((log) => log.max_ping);
         const minPingData = data.map((log) => log.min_ping);
 
         if (chart) {
-          // Update existing chart data
+          // Update the existing chart with new data
           chart.data.labels = labels;
           chart.data.datasets[0].data = packetLossData;
           chart.data.datasets[1].data = avgPingData;
           chart.data.datasets[2].data = minPingData;
           chart.data.datasets[3].data = maxPingData;
 
-          // Prevent jumpy transitions by using 'none' for real-time updates
+          // If in real-time mode, disable animation for smoother updates
           if (mode === "realtime") {
             chart.update("none");
           } else {
             chart.update();
           }
         } else {
-          // Create new chart
+          // Create a new chart if it doesn't already exist
           chart = new Chart(ctx, {
             type: "line",
             data: {
@@ -169,26 +191,26 @@
             options: {
               elements: {
                 point: {
-                  radius: 0,
+                  radius: 0, // Disable points on lines for a smoother look
                 },
               },
               responsive: true,
               animation: false,
-              spanGaps: true,
+              spanGaps: true, // Handle gaps in data
               scales: {
                 x: {
                   title: {
                     display: true,
-                    text: "Timestamp",
+                    text: "Timestamp", // X-axis label
                   },
                 },
                 y: {
                   title: {
                     display: true,
-                    text: "Ping",
+                    text: "Ping", // Y-axis label
                   },
                   min: 0,
-                  max: 1000,
+                  max: 1000, // Set Y-axis range from 0 to 1000
                   ticks: {
                     callback: function (value) {
                       // Only show these specific tick values
@@ -198,7 +220,7 @@
                       }
                       return null;
                     },
-                    stepSize: 1, // Step size is optional but can help manage the scale
+                    stepSize: 1, // Optional step size for finer control
                   },
                 },
               },
@@ -209,27 +231,29 @@
 
       // Function to fetch logs based on the selected mode
       function fetchLogs() {
-        let url = `/logs?mode=${mode}`;
+        let url = `/logs?mode=${mode}`; // Construct the API URL with the selected mode
         fetch(url)
-          .then((response) => response.json())
+          .then((response) => response.json()) // Parse the JSON response
           .then((data) => {
-            updateChart(data);
+            updateChart(data); // Update the chart with the new data
+
+            // If in real-time mode, set up continuous fetching every 3 seconds
             if (mode === "realtime") {
-              setTimeout(fetchLogs, 3000); // Keep updating every 3 seconds for real-time mode
+              setTimeout(fetchLogs, 3000);
             }
           })
-          .catch((error) => console.error("Error fetching logs:", error));
+          .catch((error) => console.error("Error fetching logs:", error)); // Handle any errors
       }
 
-      // Event listener for mode selection change
+      // Event listener for when the user changes the mode from the dropdown
       document
         .getElementById("modeSelect")
         .addEventListener("change", function () {
-          mode = this.value;
-          fetchLogs(); // Fetch logs based on the new mode
+          mode = this.value; // Update the mode
+          fetchLogs(); // Fetch logs for the new mode
         });
 
-      // Initial fetch and setup
+      // Initial data fetch when the page loads
       fetchLogs();
     </script>
   </body>
