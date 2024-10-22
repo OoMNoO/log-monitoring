@@ -8,10 +8,10 @@ from collections import defaultdict
 
 app = Flask(__name__)
 
-# Log server variables
-LOG_SERVER_PORT = "5000"
-LOG_FILE_PATH = '/mnt/D/Projects/log-monitoring/NetworkMon.log'
-CACHE_FILE_PATH = './cache'
+# Server settings
+LOG_SERVER_PORT = "5000"  # Port for the Flask server
+LOG_FILE_PATH = '/mnt/D/Projects/log-monitoring/NetworkMon.log'  # Path to the log file
+CACHE_FILE_PATH = './cache'  # Path to store cached data
 CACHE_TIMEOUT = 300  # Cache timeout in seconds (5 minutes)
 
 # # Ping test variables
@@ -44,30 +44,38 @@ CACHE_TIMEOUT = 300  # Cache timeout in seconds (5 minutes)
 
 # PingTest()
 
-# Function to parse the log data and return structured data
+# Function to parse the log data from the log file
 def parse_logs():
+    """
+    Reads the log file and extracts timestamp, packet loss, and ping information
+    into a structured format.
+    """
     logs = []
     with open(LOG_FILE_PATH, 'r') as f:
-        lines = f.readlines()
+        lines = f.readlines()  # Read all lines from the log file
         for line in lines:
             try:
-                # Extract connection status data from each line
+                # Split line based on 'Connection status : ' to separate timestamp and status
                 parts = line.split('Connection status : ')
                 if len(parts) > 1:
-                    timestamp = parts[0].rsplit('-', 1)[0].strip().rsplit('.', 1)[0].strip()
-                    status = parts[1].strip().split('_')
+                    timestamp = parts[0].rsplit('-', 1)[0].strip().rsplit('.', 1)[0].strip()  # Extract timestamp
+                    status = parts[1].strip().split('_')  # Split the status information
                     if status[0] == "TimeOut":
+                        # If there is a timeout, set default values
                         packet_loss = 100
                         min_ping = 0
                         avg_ping = 0
                         max_ping = 0
                         mdev_ping = 0
                     else:
+                        # Extract packet loss and ping statistics
                         packet_loss = int(status[0])
                         min_ping = int(status[1])
                         avg_ping = int(status[2])
                         max_ping = int(status[3])
                         mdev_ping = int(status[4])
+                    
+                    # Append the structured log entry to the logs list
                     logs.append({
                         'timestamp': timestamp,
                         'date': timestamp.split(" ")[0],
@@ -79,39 +87,57 @@ def parse_logs():
                         'mdev_ping': mdev_ping
                     })
             except Exception as e:
+                # Handle any parsing errors and continue processing the next log line
                 print(f"Error parsing log line: {e}")
                 continue
-    return logs
+    return logs  # Return the list of parsed logs
 
+# Cache functions to store and retrieve log data for different modes
 def load_cache(mode):
-    """Load the cache from a file."""
+    """
+    Load cached log data for a specific mode from a file, if it exists.
+    """
     if os.path.exists(f"{CACHE_FILE_PATH}_{mode}.json"):
         with open(f"{CACHE_FILE_PATH}_{mode}.json", 'r') as f:
             return json.load(f)
     return None
 
 def save_cache(mode, data):
-    """Save the cache to a file."""
+    """
+    Save log data to a cache file for a specific mode.
+    """
     with open(f"{CACHE_FILE_PATH}_{mode}.json", 'w') as f:
         json.dump(data, f)
 
 def is_cache_valid(cache_time):
-    """Check if the cache is valid based on the timeout."""
+    """
+    Check if the cached data is still valid by comparing the cache timestamp with the current time.
+    """
     return (datetime.now() - datetime.fromtimestamp(cache_time)).total_seconds() < CACHE_TIMEOUT
 
 @app.route('/')
 def index():
+    """
+    Render the main HTML page for the log monitoring system.
+    """
     return render_template('index.html')
 
 @app.route('/logs')
 def get_logs():
-    mode = request.args.get('mode', 'realtime')
-    logs = parse_logs()
+    """
+    Endpoint to retrieve logs based on the requested mode. 
+    Modes supported: realtime, 1hr, 3hr, 12hr, 24hr, 72hr.
+    - 'realtime': Returns the last 100 logs.
+    - Other modes: Returns logs from the past 1, 3, 12, 24, or 72 hours, potentially using cached data.
+    """
+    mode = request.args.get('mode', 'realtime')  # Get mode from request (default: realtime)
+    logs = parse_logs()  # Parse all logs from the file
 
-    # Real-time: Return the last 100 logs
+    # Handle 'realtime' mode by returning the last 100 logs
     if mode == 'realtime':
         return jsonify(logs[-100:])
 
+    # Define the hour intervals for different modes
     interval_map = {
         '1hr': 1,
         '3hr': 3,
@@ -120,37 +146,37 @@ def get_logs():
         '72hr': 72
     }
 
+    # Handle historical modes (1hr, 3hr, 12hr, 24hr, 72hr)
     if mode in interval_map:
-
-        # Load cached data
-        cache = load_cache(mode)
+        cache = load_cache(mode)  # Load cached data for the mode
         now = datetime.now()
-        
-        interval_hours = interval_map[mode]
-        
+        interval_hours = interval_map[mode]  # Get the number of hours for the mode
+
+        # If cache is valid, return cached data
         if cache and is_cache_valid(cache['timestamp']):
             print(f"{mode} found in cache")
             return jsonify(cache['data'])
+        
         print(f"{mode} not found in cache")
+        
+        # Filter logs based on the time interval
         relevant_logs = [log for log in logs if datetime.strptime(log['timestamp'], '%Y-%m-%d %H:%M:%S') > now - timedelta(hours=interval_hours)]
         
-        # Update cache
+        # Save the filtered logs to the cache
         if cache is None:
             cache = {}
         cache = {'timestamp': now.timestamp(), 'data': relevant_logs}
         save_cache(mode, cache)
         
-        return jsonify(relevant_logs)
+        return jsonify(relevant_logs)  # Return the filtered logs
 
+    # If mode is not recognized, return an empty list
     return jsonify([])
 
 if __name__ == '__main__':
-    # Run the Flask server
+    # Start the Flask server
     app.run(host="0.0.0.0", port=LOG_SERVER_PORT, debug=True)
 
 # TODO:
-# websocket for realtime
-# modes: realtime, 1hr, 6hr, 12hr, 24hr
-# remove average
-# remove weekly
-# responsive
+# - Add websocket for real-time log updates.
+# - Make the UI responsive.
