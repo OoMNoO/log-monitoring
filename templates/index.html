@@ -12,57 +12,80 @@
     <style>
       body {
         font-family: Arial, sans-serif;
-        background-color: #f4f4f9;
+        background-color: #0d1017;
         margin: 0;
         padding: 0;
-      }
-
-      /* Main container styles for the content */
-      .container {
-        max-width: 90%;
-        margin: 20px auto;
-        padding: 20px;
-        background-color: #fff;
-        border-radius: 5px;
-        box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        max-height: 100vh;
+        height: 100vh;
         display: flex;
         flex-direction: column;
         align-items: center;
       }
 
-      h2 {
-        text-align: center;
-        font-size: 1.8rem;
-        margin-bottom: 20px;
+      .header {
+        display: flex;
+        align-items: center;
+        justify-content: start;
+        width: 100%;
+        max-width: 100vw;
+        height: 37px;
+        margin: 20px 0;
       }
 
-      /* Ensure canvas (chart area) takes full width but maintains aspect ratio */
-      canvas {
-        width: 100%;
-        height: auto;
+      h1 {
+        text-align: left;
+        font-size: 1.8rem;
+        color: white;
+        padding-left: 2rem;
       }
 
       /* Styles for mode dropdown button */
       #modeSelect {
-        margin-top: 20px;
-        padding: 10px 15px;
-        background-color: #007bff;
-        color: white;
-        border: none;
+        width: fit-content;
+        margin: 0;
+        margin-left: 10px;
+        padding: 7px 10px;
+        background: #20252e;
+        color: #99adb5;
+        border: #99adb5 2px solid;
         border-radius: 5px;
+        outline: none;
         cursor: pointer;
         font-size: 1rem;
         display: inline-block;
+        font-size: 1rem;
+        transition: all 0.4s ease;
       }
 
       /* Hover effect for mode dropdown button */
       #modeSelect:hover {
-        background-color: #0056b3;
+        background-color: #99adb5;
+        color: #090b10;
+        border: #090b10 2px solid;
+        transition: all 0.4s ease;
       }
 
-      #modeSelect {
-        margin-bottom: 10px;
-        font-size: 1rem;
+      /* Main container styles for the content */
+      .container {
+        max-width: 90vw;
+        width: 90vw;
+        height: calc(100vh - 37px - 40px - 50px);
+        max-height: calc(100vh - 37px - 40px - 50px);
+        background: #20252e;
+        padding: 20px;
+        border: 2px solid #090b10;
+        border-radius: 12px;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        position: relative;
+      }
+
+      #logChart {
+        width: 100%;
+        height: calc(100vh - 37px - 40px);
+        max-height: calc(100vh - 37px - 40px);
       }
 
       /* Media queries for responsiveness on smaller devices */
@@ -70,35 +93,28 @@
         .container {
           padding: 15px;
         }
-        h2 {
+        h1 {
           font-size: 1.6rem;
         }
         #modeSelect {
-          width: 100%;
           font-size: 1rem;
         }
       }
 
       @media (max-width: 480px) {
-        h2 {
+        h1 {
           font-size: 1.4rem;
         }
         #modeSelect {
-          padding: 8px 12px;
           font-size: 0.9rem;
-        }
-        canvas {
-          height: 300px;
         }
       }
     </style>
   </head>
 
   <body>
-    <!-- Main content container -->
-    <div class="container">
-      <h2>Network Log Monitor</h2>
-
+    <div class="header">
+      <h1>Network Status |</h1>
       <!-- Dropdown for selecting the log mode (realtime, 1hr, etc.) -->
       <select id="modeSelect">
         <option value="realtime">Real-Time</option>
@@ -108,7 +124,10 @@
         <option value="24hr">Last 24 Hours</option>
         <option value="72hr">Last 72 Hours</option>
       </select>
+    </div>
 
+    <!-- Main content container -->
+    <div class="container">
       <!-- Canvas element where the chart will be drawn -->
       <canvas id="logChart"></canvas>
     </div>
@@ -161,30 +180,31 @@
                 {
                   label: "Packet Loss (%)",
                   data: packetLossData,
-                  borderColor: "#C62E2E",
-                  backgroundColor: "#F95454",
+                  borderColor: "#F95454",
+                  backgroundColor: "#C62E2E",
                   fill: false,
                 },
                 {
                   label: "Avg Ping (ms)",
                   data: avgPingData,
-                  borderColor: "#0B2F9F",
-                  backgroundColor: "rgba(54, 162, 235, 1)",
+                  borderColor: "#406df2",
+                  backgroundColor: "#0B2F9F",
                   fill: false,
                 },
                 {
                   label: "Min Ping (ms)",
                   data: minPingData,
-                  borderColor: "rgba(255, 99, 132, 1)",
-                  backgroundColor: "rgba(255, 99, 132, 0.2)",
+                  borderColor: "#ff9466",
+                  backgroundColor: "#ff824d",
                   fill: false,
                 },
                 {
                   label: "Max Ping (ms)",
                   data: maxPingData,
-                  borderColor: "rgba(75, 192, 192, 1)",
-                  backgroundColor: "rgba(75, 192, 192, 0.2)",
+                  borderColor: "#359797",
+                  backgroundColor: "#287171",
                   fill: false,
+                  hidden: true,
                 },
               ],
             },
@@ -201,13 +221,21 @@
                 x: {
                   title: {
                     display: true,
-                    text: "Timestamp", // X-axis label
+                    text: "Time", // X-axis label
+                    color: "#4e6c78",
+                  },
+                  grid: {
+                    color: "#4f515c",
                   },
                 },
                 y: {
                   title: {
                     display: true,
                     text: "Ping", // Y-axis label
+                    color: "#4e6c78",
+                  },
+                  grid: {
+                    color: "#2e323c",
                   },
                   min: 0,
                   max: 1000, // Set Y-axis range from 0 to 1000
@@ -221,6 +249,14 @@
                       return null;
                     },
                     stepSize: 1, // Optional step size for finer control
+                  },
+                },
+              },
+              plugins: {
+                legend: {
+                  display: true,
+                  labels: {
+                    color: "#4e6c78",
                   },
                 },
               },

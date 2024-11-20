@@ -47,11 +47,11 @@ def parse_logs():
                         mdev_ping = 0
                     else:
                         # Extract packet loss and ping statistics
-                        packet_loss = int(status[0])
-                        min_ping = int(status[1])
-                        avg_ping = int(status[2])
-                        max_ping = int(status[3])
-                        mdev_ping = int(status[4])
+                        packet_loss = int(status[0]) if int(status[0]) < 100 else 100
+                        min_ping = int(status[1]) if int(status[1]) < 1000 else 1000
+                        avg_ping = int(status[2]) if int(status[2]) < 1000 else 1000
+                        max_ping = int(status[3]) if int(status[3]) < 1000 else 1000
+                        mdev_ping = int(status[4]) if int(status[4]) < 1000 else 1000
                     
                     # Append the structured log entry to the logs list
                     logs.append({
