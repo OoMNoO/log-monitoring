@@ -67,12 +67,12 @@
 
       /* Main container styles for the content */
       .container {
-        max-width: 90vw;
-        width: 90vw;
+        max-width: 93vw;
+        width: 93vw;
         height: calc(100vh - 37px - 40px - 50px);
         max-height: calc(100vh - 37px - 40px - 50px);
         background: #20252e;
-        padding: 20px;
+        padding: 1rem 0.8rem 0.5rem 0.5rem;
         border: 2px solid #090b10;
         border-radius: 12px;
         box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
@@ -89,15 +89,25 @@
       }
 
       /* Media queries for responsiveness on smaller devices */
+
+      /* Portrait */
+      @media screen and (max-width: 1080px) and (max-height: 2460px) and (orientation: portrait) {
+        .container {
+          max-height: 35vh;
+        }
+      }
       @media (max-width: 768px) {
         .container {
-          padding: 15px;
+          padding: 10px;
+        }
+        #logChart {
+          height: auto;
         }
         h1 {
-          font-size: 1.6rem;
+          font-size: 1.4rem;
         }
         #modeSelect {
-          font-size: 1rem;
+          font-size: 0.9rem;
         }
       }
 
@@ -139,6 +149,10 @@
       let mode = "realtime"; // Default mode
       const modes = ["realtime", "1hr", "3hr", "12hr", "24hr"]; // Supported modes
 
+      // function isMobileDevice() {
+      //   return window.innerWidth <= 768; // Adjust breakpoint as needed
+      // }
+
       // Function to update the chart with fetched log data
       function updateChart(data) {
         let labels = null;
@@ -153,8 +167,8 @@
         // Extract different ping and packet loss values from logs
         const packetLossData = data.map((log) => log.packet_loss);
         const avgPingData = data.map((log) => log.avg_ping);
-        const maxPingData = data.map((log) => log.max_ping);
         const minPingData = data.map((log) => log.min_ping);
+        const maxPingData = data.map((log) => log.max_ping);
 
         if (chart) {
           // Update the existing chart with new data
@@ -215,6 +229,7 @@
                 },
               },
               responsive: true,
+              maintainAspectRatio: false,
               animation: false,
               spanGaps: true, // Handle gaps in data
               scales: {
@@ -227,6 +242,9 @@
                   grid: {
                     color: "#4f515c",
                   },
+                  // ticks: {
+                  //   display: !isMobileDevice(), // Disable label on mobile
+                  // },
                 },
                 y: {
                   title: {
@@ -252,9 +270,11 @@
                   },
                 },
               },
+              // plugins: [htmlLegendPlugin],
               plugins: {
                 legend: {
                   display: true,
+                  // display: !isMobileDevice(), // Disable legend on mobile
                   labels: {
                     color: "#4e6c78",
                   },
